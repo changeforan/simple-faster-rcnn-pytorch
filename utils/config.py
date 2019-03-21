@@ -7,7 +7,7 @@ from pprint import pprint
 
 class Config:
     # data
-    voc_data_dir = '/home/cy/.chainer/dataset/pfnet/chainercv/voc/VOCdevkit/VOC2007/'
+    voc_data_dir = '/home/cs/work/my_voc_dataset'
     min_size = 600  # image resize
     max_size = 1000 # image resize
     num_workers = 8
@@ -43,7 +43,7 @@ class Config:
     # debug
     debug_file = '/tmp/debugf'
 
-    test_num = 10000
+    test_num = 100
     # model
     load_path = None
 
