@@ -4,7 +4,7 @@ scikit-image
 tqdm
 fire
 pprint
-matplotlib
+matplotlib==2.0.2
 ipdb
 cython
 git+https://github.com/pytorch/tnt.git@master
