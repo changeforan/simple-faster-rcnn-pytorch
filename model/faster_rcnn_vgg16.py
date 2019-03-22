@@ -76,8 +76,6 @@ class FasterRCNNVGG16(FasterRCNN):
                  
         extractor, classifier = decom_vgg16()
 
-        print(extractor)
-
         rpn = RegionProposalNetwork(
             512, 512,
             ratios=ratios,
@@ -160,7 +158,7 @@ class VGG16RoIHead(nn.Module):
 
         pool_5 = self.roi_5(x[2], indices_and_rois)
         pool_4 = self.roi_4(x[1], indices_and_rois)
-        pool_3 = self.roi_3(x[2], indices_and_rois)
+        pool_3 = self.roi_3(x[0], indices_and_rois)
 
         pool_5 = pool_5.view(pool_5.size(0), -1)
         pool_4 = pool_4.view(pool_4.size(0), -1)
