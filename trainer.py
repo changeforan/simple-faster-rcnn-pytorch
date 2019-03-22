@@ -97,7 +97,7 @@ class FasterRCNNTrainer(nn.Module):
         features = self.faster_rcnn.extractor(imgs)
 
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
-            self.faster_rcnn.rpn(features, img_size, scale)
+            self.faster_rcnn.rpn(features[-1], img_size, scale)
 
         # Since batch size is one, convert variables to singular form
         bbox = bboxes[0]
