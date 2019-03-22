@@ -154,6 +154,10 @@ class VGG16RoIHead(nn.Module):
         pool_4 = pool_4.view(pool_4.size(0), -1)
         pool_3 = pool_3.view(pool_3.size(0), -1)
 
+        print(pool_5.size)
+        print(pool_4.size)
+        print(pool_3.size)
+
         fc7 = self.classifier(pool_5)
         roi_cls_locs = self.cls_loc(fc7)
         roi_scores = self.score(fc7)
