@@ -7,7 +7,7 @@ from model.faster_rcnn import FasterRCNN
 from model.roi_module import RoIPooling2D
 from utils import array_tool as at
 from utils.config import opt
-
+import torch.nn.functional as F
 
 def decom_vgg16():
     # the 30th layer of features is relu of conv5_3
@@ -119,7 +119,9 @@ class VGG16RoIHead(nn.Module):
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
-        self.roi = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)
+        self.roi_5 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)
+        self.roi_4 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale * 2.)
+        self.roi_3 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale * 4.)
 
     def forward(self, x_5, x_4, x_3, rois, roi_indices):
         """Forward the chain.
@@ -146,17 +148,20 @@ class VGG16RoIHead(nn.Module):
         xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
         indices_and_rois =  xy_indices_and_rois.contiguous()
 
-        pool_5 = self.roi(x_5, indices_and_rois)
-        pool_4 = self.roi(x_4, indices_and_rois)
-        # pool_3 = self.roi(x_3, indices_and_rois)
+        pool_5 = self.roi_5(x_5, indices_and_rois)
+        pool_4 = self.roi_4(x_4, indices_and_rois)
+        pool_3 = self.roi_3(x_3, indices_and_rois)
 
         pool_5 = pool_5.view(pool_5.size(0), -1)
         pool_4 = pool_4.view(pool_4.size(0), -1)
-        # pool_3 = pool_3.view(pool_3.size(0), -1)
+        pool_3 = pool_3.view(pool_3.size(0), -1)
 
-        print(pool_5.shape)
-        print(pool_4.shape)
-        # print(pool_3.shape)
+        pool_5 = F.normalize(pool_5, p=2, dim=1)
+        pool_4 = F.normalize(pool_4, p=2, dim=1)
+        pool_3 = F.normalize(pool_3, p=2, dim=1)
+
+        pool_5 = pool_5 + pool_4
+
 
         fc7 = self.classifier(pool_5)
         roi_cls_locs = self.cls_loc(fc7)
