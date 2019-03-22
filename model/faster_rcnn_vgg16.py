@@ -11,6 +11,8 @@ from utils.config import opt
 
 def decom_vgg16():
     # the 30th layer of features is relu of conv5_3
+    # the 23th layer of features is relu of conv4_3
+    # the 16th layer of features is relu of conv3_3
     if opt.caffe_pretrain:
         model = vgg16(pretrained=False)
         if not opt.load_path:
@@ -33,7 +35,10 @@ def decom_vgg16():
         for p in layer.parameters():
             p.requires_grad = False
 
-    return nn.Sequential(*features), classifier
+    return nn.Sequential(*features), \
+           nn.Sequential(*features[:23]), \
+           nn.Sequential(*features[:16]), \
+           classifier
 
 
 class FasterRCNNVGG16(FasterRCNN):
@@ -60,7 +65,7 @@ class FasterRCNNVGG16(FasterRCNN):
                  anchor_scales=[8, 16, 32]
                  ):
                  
-        extractor, classifier = decom_vgg16()
+        extractor_conv5, extractor_conv4, extractor_conv3, classifier = decom_vgg16()
 
         rpn = RegionProposalNetwork(
             512, 512,
@@ -77,7 +82,9 @@ class FasterRCNNVGG16(FasterRCNN):
         )
 
         super(FasterRCNNVGG16, self).__init__(
-            extractor,
+            extractor_conv5,
+            extractor_conv4,
+            extractor_conv3,
             rpn,
             head,
         )
@@ -114,7 +121,7 @@ class VGG16RoIHead(nn.Module):
         self.spatial_scale = spatial_scale
         self.roi = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)
 
-    def forward(self, x, rois, roi_indices):
+    def forward(self, x_5, x_4, x_3, rois, roi_indices):
         """Forward the chain.
 
         We assume that there are :math:`N` batches.
@@ -139,9 +146,15 @@ class VGG16RoIHead(nn.Module):
         xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
         indices_and_rois =  xy_indices_and_rois.contiguous()
 
-        pool = self.roi(x, indices_and_rois)
-        pool = pool.view(pool.size(0), -1)
-        fc7 = self.classifier(pool)
+        pool_5 = self.roi(x_5, indices_and_rois)
+        pool_4 = self.roi(x_4, indices_and_rois)
+        pool_3 = self.roi(x_3, indices_and_rois)
+
+        pool_5 = pool_5.view(pool_5.size(0), -1)
+        pool_4 = pool_4.view(pool_4.size(0), -1)
+        pool_3 = pool_3.view(pool_3.size(0), -1)
+
+        fc7 = self.classifier(pool_5)
         roi_cls_locs = self.cls_loc(fc7)
         roi_scores = self.score(fc7)
         return roi_cls_locs, roi_scores
