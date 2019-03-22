@@ -17,8 +17,8 @@ class MultiFeatureExtractor(nn.Module):
 
     def forward(self, x):
         conv3_out = self.net[:16](x)
-        conv4_out = self.net[:23](x)
-        conv5_out = self.net(x)
+        conv4_out = self.net[16:23](conv3_out)
+        conv5_out = self.net[23:30](conv4_out)
         return conv3_out, conv4_out, conv5_out
 
 
