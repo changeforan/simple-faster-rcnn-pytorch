@@ -68,9 +68,10 @@ class FasterRCNN(nn.Module):
 
     """
 
-    def __init__(self, extractor_conv5, extractor_conv4, extractor_conv3,rpn, head,
-                loc_normalize_mean = (0., 0., 0., 0.),
-                loc_normalize_std = (0.1, 0.1, 0.2, 0.2)
+    def __init__(self, extractor_conv5, extractor_conv4,
+                 extractor_conv3, rpn, head,
+                 loc_normalize_mean = (0., 0., 0., 0.),
+                 loc_normalize_std = (0.1, 0.1, 0.2, 0.2)
     ):
         super(FasterRCNN, self).__init__()
         self.extractor_conv5 = extractor_conv5

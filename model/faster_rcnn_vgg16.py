@@ -148,15 +148,15 @@ class VGG16RoIHead(nn.Module):
 
         pool_5 = self.roi(x_5, indices_and_rois)
         pool_4 = self.roi(x_4, indices_and_rois)
-        pool_3 = self.roi(x_3, indices_and_rois)
+        # pool_3 = self.roi(x_3, indices_and_rois)
 
         pool_5 = pool_5.view(pool_5.size(0), -1)
         pool_4 = pool_4.view(pool_4.size(0), -1)
-        pool_3 = pool_3.view(pool_3.size(0), -1)
+        # pool_3 = pool_3.view(pool_3.size(0), -1)
 
         print(pool_5.shape)
         print(pool_4.shape)
-        print(pool_3.shape)
+        # print(pool_3.shape)
 
         fc7 = self.classifier(pool_5)
         roi_cls_locs = self.cls_loc(fc7)
