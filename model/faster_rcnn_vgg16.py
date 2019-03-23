@@ -7,7 +7,7 @@ from model.faster_rcnn import FasterRCNN
 from model.roi_module import RoIPooling2D
 from utils import array_tool as at
 from utils.config import opt
-
+import torch.nn.functional as F
 
 class MultiFeatureExtractor(nn.Module):
 
@@ -16,9 +16,10 @@ class MultiFeatureExtractor(nn.Module):
         self.net = nn.Sequential(*features)
 
     def forward(self, x):
-        conv4_out = self.net[:23](x)
+        conv3_out = self.net[:16](x)
+        conv4_out = self.net[16:23](conv3_out)
         conv5_out = self.net[23:30](conv4_out)
-        return conv4_out, conv5_out
+        return conv3_out, conv4_out, conv5_out
 
 
 
@@ -127,6 +128,7 @@ class VGG16RoIHead(nn.Module):
         self.spatial_scale = spatial_scale
         self.roi_5 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)
         self.roi_4 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale * 2.)
+        self.roi_3 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale * 4.)
 
     def forward(self, x, rois, roi_indices):
         """Forward the chain.
@@ -156,13 +158,19 @@ class VGG16RoIHead(nn.Module):
 
         pool_5 = self.roi_5(x[2], indices_and_rois)
         pool_4 = self.roi_4(x[1], indices_and_rois)
-
+        pool_3 = self.roi_3(x[0], indices_and_rois)
 
         pool_5 = pool_5.view(pool_5.size(0), -1)
         pool_4 = pool_4.view(pool_4.size(0), -1)
+        pool_3 = pool_3.view(pool_3.size(0), -1)
 
+        pool_3 = pool_3.view(-1, 1).repeat(1, 2).view(pool_3.size(0), -1)
 
-        pool_5 = pool_5 + pool_4
+        pool_5 = F.normalize(pool_5, p=2, dim=1)
+        pool_4 = F.normalize(pool_4, p=2, dim=1)
+        pool_3 = F.normalize(pool_3, p=2, dim=1)
+
+        pool_5 = pool_5 + pool_4 + pool_3
 
 
         fc7 = self.classifier(pool_5)
