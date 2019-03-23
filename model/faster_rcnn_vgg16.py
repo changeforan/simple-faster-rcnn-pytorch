@@ -166,9 +166,9 @@ class VGG16RoIHead(nn.Module):
 
         pool_3 = pool_3.repeat(1, 2)
 
-        # pool_5 = F.normalize(pool_5, p=2, dim=1)
-        # pool_4 = F.normalize(pool_4, p=2, dim=1)
-        # pool_3 = F.normalize(pool_3, p=2, dim=1)
+        pool_5 = F.normalize(pool_5, p=2, dim=1)
+        pool_4 = F.normalize(pool_4, p=2, dim=1)
+        pool_3 = F.normalize(pool_3, p=2, dim=1)
 
         pool_5 = pool_5 + pool_4 + pool_3
 
