@@ -74,8 +74,7 @@ def train(**kwargs):
     best_map = 0
     lr_ = opt.lr
 
-    if opt.only_eval:
-        print(opt.only_eval)
+    if opt.eval_only:
         eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
         trainer.vis.plot('test_map', eval_result['map'])
         lr_ = trainer.faster_rcnn.optimizer.param_groups[0]['lr']

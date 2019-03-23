@@ -11,7 +11,7 @@ from model.utils.bbox_tools import bbox_iou
 def eval_detection_voc(
         pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels,
         gt_difficults=None,
-        iou_thresh=0.5, use_07_metric=True):
+        iou_thresh=0.5, use_07_metric=False):
     """Calculate average precisions based on evaluation code of PASCAL VOC.
 
     This function evaluates predicted bounding boxes obtained from a dataset
@@ -70,14 +70,14 @@ def eval_detection_voc(
 
     """
 
-    prec, rec, tp, fp, fn = calc_detection_voc_prec_rec(
+    prec, rec = calc_detection_voc_prec_rec(
         pred_bboxes, pred_labels, pred_scores,
         gt_bboxes, gt_labels, gt_difficults,
         iou_thresh=iou_thresh)
 
     ap = calc_detection_voc_ap(prec, rec, use_07_metric=use_07_metric)
 
-    return {'ap': ap, 'map': np.nanmean(ap), 'tp': tp, 'fp': fp, 'fn': fn}
+    return {'ap': ap, 'map': np.nanmean(ap)}
 
 
 def calc_detection_voc_prec_rec(
@@ -218,13 +218,8 @@ def calc_detection_voc_prec_rec(
             raise ValueError('Length of input iterables need to be same.')
 
     n_fg_class = max(n_pos.keys()) + 1
-    print(n_fg_class)
     prec = [None] * n_fg_class
     rec = [None] * n_fg_class
-
-    tp = [None] * n_fg_class
-    fp = [None] * n_fg_class
-    fn = [None] * n_fg_class
 
     for l in n_pos.keys():
         score_l = np.array(score[l])
@@ -233,18 +228,17 @@ def calc_detection_voc_prec_rec(
         order = score_l.argsort()[::-1]
         match_l = match_l[order]
 
-        tp[l] = np.cumsum(match_l == 1)
-        fp[l] = np.cumsum(match_l == 0)
-        fn[l] = n_pos[l] -tp[l]
+        tp = np.cumsum(match_l == 1)
+        fp = np.cumsum(match_l == 0)
 
         # If an element of fp + tp is 0,
         # the corresponding element of prec[l] is nan.
-        prec[l] = tp[l] / (fp[l] + tp[l])
+        prec[l] = tp / (fp + tp)
         # If n_pos[l] is 0, rec[l] is None.
         if n_pos[l] > 0:
-            rec[l] = tp[l] / n_pos[l]
+            rec[l] = tp / n_pos[l]
 
-    return prec, rec, tp, fp, fn
+    return prec, rec
 
 
 def calc_detection_voc_ap(prec, rec, use_07_metric=False):
