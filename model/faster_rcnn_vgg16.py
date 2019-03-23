@@ -9,10 +9,22 @@ from utils import array_tool as at
 from utils.config import opt
 import torch.nn.functional as F
 
+class MultiFeatureExtractor(nn.Module):
+
+    def __init__(self, features):
+        super(MultiFeatureExtractor, self).__init__()
+        self.net = nn.Sequential(*features)
+
+    def forward(self, x):
+        conv3_out = self.net[:16](x)
+        conv4_out = self.net[16:23](conv3_out)
+        conv5_out = self.net[23:30](conv4_out)
+        return conv3_out, conv4_out, conv5_out
+
+
+
 def decom_vgg16():
     # the 30th layer of features is relu of conv5_3
-    # the 23th layer of features is relu of conv4_3
-    # the 16th layer of features is relu of conv3_3
     if opt.caffe_pretrain:
         model = vgg16(pretrained=False)
         if not opt.load_path:
@@ -35,10 +47,7 @@ def decom_vgg16():
         for p in layer.parameters():
             p.requires_grad = False
 
-    return nn.Sequential(*features), \
-           nn.Sequential(*features[:23]), \
-           nn.Sequential(*features[:16]), \
-           classifier
+    return MultiFeatureExtractor(features), classifier
 
 
 class FasterRCNNVGG16(FasterRCNN):
@@ -65,7 +74,7 @@ class FasterRCNNVGG16(FasterRCNN):
                  anchor_scales=[8, 16, 32]
                  ):
                  
-        extractor_conv5, extractor_conv4, extractor_conv3, classifier = decom_vgg16()
+        extractor, classifier = decom_vgg16()
 
         rpn = RegionProposalNetwork(
             512, 512,
@@ -82,9 +91,7 @@ class FasterRCNNVGG16(FasterRCNN):
         )
 
         super(FasterRCNNVGG16, self).__init__(
-            extractor_conv5,
-            extractor_conv4,
-            extractor_conv3,
+            extractor,
             rpn,
             head,
         )
@@ -123,7 +130,7 @@ class VGG16RoIHead(nn.Module):
         self.roi_4 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale * 2.)
         self.roi_3 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale * 4.)
 
-    def forward(self, x_5, x_4, x_3, rois, roi_indices):
+    def forward(self, x, rois, roi_indices):
         """Forward the chain.
 
         We assume that there are :math:`N` batches.
@@ -148,9 +155,10 @@ class VGG16RoIHead(nn.Module):
         xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
         indices_and_rois =  xy_indices_and_rois.contiguous()
 
-        pool_5 = self.roi_5(x_5, indices_and_rois)
-        pool_4 = self.roi_4(x_4, indices_and_rois)
-        pool_3 = self.roi_3(x_3, indices_and_rois)
+
+        pool_5 = self.roi_5(x[2], indices_and_rois)
+        pool_4 = self.roi_4(x[1], indices_and_rois)
+        pool_3 = self.roi_3(x[0], indices_and_rois)
 
         pool_5 = pool_5.view(pool_5.size(0), -1)
         pool_4 = pool_4.view(pool_4.size(0), -1)

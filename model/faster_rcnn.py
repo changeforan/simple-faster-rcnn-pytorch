@@ -68,15 +68,12 @@ class FasterRCNN(nn.Module):
 
     """
 
-    def __init__(self, extractor_conv5, extractor_conv4,
-                 extractor_conv3, rpn, head,
-                 loc_normalize_mean = (0., 0., 0., 0.),
-                 loc_normalize_std = (0.1, 0.1, 0.2, 0.2)
+    def __init__(self, extractor, rpn, head,
+                loc_normalize_mean = (0., 0., 0., 0.),
+                loc_normalize_std = (0.1, 0.1, 0.2, 0.2)
     ):
         super(FasterRCNN, self).__init__()
-        self.extractor_conv5 = extractor_conv5
-        self.extractor_conv4 = extractor_conv4
-        self.extractor_conv3 = extractor_conv3
+        self.extractor = extractor
         self.rpn = rpn
         self.head = head
 
@@ -129,13 +126,11 @@ class FasterRCNN(nn.Module):
         """
         img_size = x.shape[2:]
 
-        h_5 = self.extractor_conv5(x)
-        h_4 = self.extractor_conv4(x)
-        h_3 = self.extractor_conv3(x)
+        h = self.extractor(x)
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
-            self.rpn(h_5, img_size, scale)
+            self.rpn(h[-1], img_size, scale)
         roi_cls_locs, roi_scores = self.head(
-            h_5, h_4, h_3, rois, roi_indices)
+            h, rois, roi_indices)
         return roi_cls_locs, roi_scores, rois, roi_indices
 
     def use_preset(self, preset):

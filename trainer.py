@@ -94,12 +94,10 @@ class FasterRCNNTrainer(nn.Module):
         _, _, H, W = imgs.shape
         img_size = (H, W)
 
-        features_5 = self.faster_rcnn.extractor_conv5(imgs)
-        features_4 = self.faster_rcnn.extractor_conv4(imgs)
-        features_3 = self.faster_rcnn.extractor_conv3(imgs)
+        features = self.faster_rcnn.extractor(imgs)
 
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
-            self.faster_rcnn.rpn(features_5, img_size, scale)
+            self.faster_rcnn.rpn(features[-1], img_size, scale)
 
         # Since batch size is one, convert variables to singular form
         bbox = bboxes[0]
@@ -120,9 +118,7 @@ class FasterRCNNTrainer(nn.Module):
         # NOTE it's all zero because now it only support for batch=1 now
         sample_roi_index = t.zeros(len(sample_roi))
         roi_cls_loc, roi_score = self.faster_rcnn.head(
-            features_5,
-            features_4,
-            features_3,
+            features,
             sample_roi,
             sample_roi_index)
 
