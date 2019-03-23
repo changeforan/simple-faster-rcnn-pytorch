@@ -70,8 +70,8 @@ class FasterRCNNVGG16(FasterRCNN):
 
     def __init__(self,
                  n_fg_class=20,
-                 ratios=[1, 2],
-                 anchor_scales=[4, 8, 16]
+                 ratios=[0.5, 1, 2],
+                 anchor_scales=[8, 16, 32]
                  ):
                  
         extractor, classifier = decom_vgg16()
@@ -158,19 +158,19 @@ class VGG16RoIHead(nn.Module):
 
         pool_5 = self.roi_5(x[2], indices_and_rois)
         pool_4 = self.roi_4(x[1], indices_and_rois)
-        # pool_3 = self.roi_3(x[0], indices_and_rois)
+        pool_3 = self.roi_3(x[0], indices_and_rois)
 
         pool_5 = pool_5.view(pool_5.size(0), -1)
         pool_4 = pool_4.view(pool_4.size(0), -1)
-        # pool_3 = pool_3.view(pool_3.size(0), -1)
+        pool_3 = pool_3.view(pool_3.size(0), -1)
 
-        # pool_3 = pool_3.repeat(1, 2)
+        pool_3 = pool_3.view(-1, 1).repeat(1, 2).view(pool_3.size(0), -1)
 
-        # pool_5 = F.normalize(pool_5, p=2, dim=1)
-        # pool_4 = F.normalize(pool_4, p=2, dim=1)
-        # pool_3 = F.normalize(pool_3, p=2, dim=1)
+        pool_5 = F.normalize(pool_5, p=2, dim=1)
+        pool_4 = F.normalize(pool_4, p=2, dim=1)
+        pool_3 = F.normalize(pool_3, p=2, dim=1)
 
-        pool_5 = pool_5 + pool_4
+        pool_5 = pool_5 + pool_4 + pool_3
 
 
         fc7 = self.classifier(pool_5)
