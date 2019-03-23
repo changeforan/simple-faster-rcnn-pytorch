@@ -73,6 +73,18 @@ def train(**kwargs):
     trainer.vis.text(dataset.db.label_names, win='labels')
     best_map = 0
     lr_ = opt.lr
+    if opt.only_eval:
+        eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
+        trainer.vis.plot('test_map', eval_result['map'])
+        lr_ = trainer.faster_rcnn.optimizer.param_groups[0]['lr']
+        log_info = 'lr:{}, map:{}, tp:{}, fp:{}, fn:{}'.format(str(lr_),
+                                                               str(eval_result['map']),
+                                                               str(eval_result['tp']),
+                                                               str(eval_result['fp']),
+                                                               str(eval_result['fn']))
+        trainer.vis.log(log_info)
+        return
+
     for epoch in range(opt.epoch):
         trainer.reset_meters()
         for ii, (img, bbox_, label_, scale) in tqdm(enumerate(dataloader)):
@@ -109,9 +121,8 @@ def train(**kwargs):
         eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
         trainer.vis.plot('test_map', eval_result['map'])
         lr_ = trainer.faster_rcnn.optimizer.param_groups[0]['lr']
-        log_info = 'lr:{}, map:{},loss:{}, tp:{}, fp:{}, fn:{}'.format(str(lr_),
+        log_info = 'lr:{}, map:{}, tp:{}, fp:{}, fn:{}'.format(str(lr_),
                                                                        str(eval_result['map']),
-                                                                       str(trainer.get_meter_data()),
                                                                        str(eval_result['tp']),
                                                                        str(eval_result['fp']),
                                                                        str(eval_result['fn']))

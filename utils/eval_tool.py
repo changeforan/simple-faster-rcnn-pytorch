@@ -218,6 +218,7 @@ def calc_detection_voc_prec_rec(
             raise ValueError('Length of input iterables need to be same.')
 
     n_fg_class = max(n_pos.keys()) + 1
+    print(n_fg_class)
     prec = [None] * n_fg_class
     rec = [None] * n_fg_class
 
