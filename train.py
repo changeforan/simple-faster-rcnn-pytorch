@@ -109,14 +109,17 @@ def train(**kwargs):
         eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
         trainer.vis.plot('test_map', eval_result['map'])
         lr_ = trainer.faster_rcnn.optimizer.param_groups[0]['lr']
-        log_info = 'lr:{}, map:{},loss:{}'.format(str(lr_),
-                                                  str(eval_result['map']),
-                                                  str(trainer.get_meter_data()))
+        log_info = 'lr:{}, map:{},loss:{}, tp:{}, fp:{}, fn:{}'.format(str(lr_),
+                                                                       str(eval_result['map']),
+                                                                       str(trainer.get_meter_data()),
+                                                                       str(eval_result['tp']),
+                                                                       str(eval_result['fp']),
+                                                                       str(eval_result['fn']))
         trainer.vis.log(log_info)
 
         if eval_result['map'] > best_map:
             best_map = eval_result['map']
-            best_path = trainer.save(best_map=best_map)
+            trainer.save(best_map=best_map)
         # if epoch == round(opt.epoch * 0.6):
         #     trainer.load(best_path)
         #     trainer.faster_rcnn.scale_lr(opt.lr_decay)
