@@ -70,14 +70,18 @@ def eval_detection_voc(
 
     """
 
-    prec, rec = calc_detection_voc_prec_rec(
+    prec, rec, tps, fps, fns = calc_detection_voc_prec_rec(
         pred_bboxes, pred_labels, pred_scores,
         gt_bboxes, gt_labels, gt_difficults,
         iou_thresh=iou_thresh)
 
     ap = calc_detection_voc_ap(prec, rec, use_07_metric=use_07_metric)
 
-    return {'ap': ap, 'map': np.nanmean(ap)}
+    return {'ap': ap,
+            'map': np.nanmean(ap),
+            'tp': tps,
+            'fp': fps,
+            'fn': fns}
 
 
 def calc_detection_voc_prec_rec(
@@ -220,6 +224,9 @@ def calc_detection_voc_prec_rec(
     n_fg_class = max(n_pos.keys()) + 1
     prec = [None] * n_fg_class
     rec = [None] * n_fg_class
+    tps = [None] * n_fg_class
+    fps = [None] * n_fg_class
+    fns = [None] * n_fg_class
 
     for l in n_pos.keys():
         score_l = np.array(score[l])
@@ -238,7 +245,19 @@ def calc_detection_voc_prec_rec(
         if n_pos[l] > 0:
             rec[l] = tp / n_pos[l]
 
-    return prec, rec
+        fn = n_pos[l] - tp
+
+        j = 0
+        for i in order:
+            if score_l[i] < 0.95:
+                break
+            j += 1
+
+        tps[l] = tp[j]
+        fps[l] = fp[j]
+        fns[l] = fn[j]
+
+    return prec, rec, tps, fps, fns
 
 
 def calc_detection_voc_ap(prec, rec, use_07_metric=False):
