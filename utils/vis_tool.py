@@ -33,7 +33,7 @@ def vis_image(img, ax=None):
     """
 
     if ax is None:
-        fig = plot.figure()
+        fig = plot.figure(figsize=(12.8, 7.2))
         ax = fig.add_subplot(1, 1, 1)
     # CHW -> HWC
     img = img.transpose((1, 2, 0))
